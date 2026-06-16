@@ -1,0 +1,25 @@
+title: PowerShell PSScriptPolicyTest File Creation
+id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+status: experimental
+description: >
+    Detects PowerShell creating PSScriptPolicyTest files in temp folders.
+    Can indicate PowerShell policy testing or masquerading malware using
+    similar naming conventions to blend in.
+author: Pranav Verma
+date: 2026/06/16
+logsource:
+    product: windows
+    category: file_event
+detection:
+    selection:
+        EventID: 11
+        Image|endswith: '\powershell.exe'
+        TargetFilename|contains: 'PSScriptPolicyTest'
+    condition: selection
+falsepositives:
+    - Windows Defender script policy testing
+    - Legitimate software installation
+level: medium
+tags:
+    - attack.command_and_control
+    - attack.t1105
