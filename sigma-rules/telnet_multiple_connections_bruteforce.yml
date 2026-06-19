@@ -1,0 +1,33 @@
+title: Multiple Telnet Connection Attempts from Same Source (Possible Brute Force)
+id: 907d8479-739b-4196-a352-d5a78dced63a
+status: experimental
+description: >
+  Detects 6 or more Telnet connection attempts (in.telnetd) from the same
+  source IP within a 120-second window, indicating a likely brute-force
+  or connection-flood attack against a Telnet service. This compensates
+  for a logging blind spot on legacy telnetd implementations, which log
+  only the connection event and not authentication success/failure.
+references:
+  - Validated against Metasploitable 2 in.telnetd syslog data, confirming
+    6 connects from one source IP within 62 seconds during a live Hydra
+    brute-force test (see attack-notes/port23-telnet.md)
+author: Pranav Verma
+date: 2026/06/18
+logsource:
+  product: linux
+  service: syslog
+  category: application
+detection:
+  selection:
+    process: 'in.telnetd'
+    message|contains: 'connect from'
+  timeframe: 120s
+  condition: selection | count(message) by src_ip >= 6
+falsepositives:
+  - Legitimate automated health checks or monitoring tools repeatedly
+    probing Telnet (rare, since Telnet is deprecated almost everywhere)
+  - Misconfigured client retry loops
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1110
