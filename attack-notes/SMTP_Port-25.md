@@ -178,7 +178,7 @@ Although successful username disclosures remain invisible, a burst of failed VRF
 
 ## Sigma Rule
 
-See [`sigma-rules/postfix_smtp_vrfy_user_enumeration.yml`](../sigma-rules/postfix_smtp_vrfy_user_enumeration.yml)
+See [`sigma-rules/Postfix_SMTP_VRFY_Enumeration.yml`](../sigma-rules/Postfix_SMTP_VRFY_Enumeration.yml)
 
 ## MITRE ATT&CK Mapping
 
