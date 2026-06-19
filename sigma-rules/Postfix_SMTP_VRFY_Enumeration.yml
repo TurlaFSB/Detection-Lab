@@ -1,0 +1,37 @@
+title: Postfix SMTP VRFY User Enumeration
+id: 907d8479-739b-4196-a352-d5a78dced63a
+status: experimental
+description: >
+  Detects rejected SMTP VRFY commands logged by Postfix. Repeated
+  VRFY requests may indicate user enumeration activity performed
+  prior to password attacks.
+
+author: Pranav Verma
+date: 2026-06-19
+
+references:
+  - https://attack.mitre.org/techniques/T1595/
+  - https://www.rfc-editor.org/rfc/rfc5321
+
+tags:
+  - attack.discovery
+  - attack.t1595
+
+logsource:
+  product: linux
+  service: postfix
+
+detection:
+  keywords:
+    - 'NOQUEUE: reject: VRFY'
+    - 'Recipient address rejected'
+    - 'User unknown in local recipient table'
+
+  condition: keywords
+
+falsepositives:
+  - SMTP diagnostics
+  - Mail administrator account verification
+  - Authorized security testing
+
+level: medium
