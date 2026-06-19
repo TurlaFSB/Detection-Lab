@@ -1,5 +1,5 @@
 title: PowerShell PSScriptPolicyTest File Creation
-id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+id: 907d8479-739b-4196-a352-d5a78dced63a
 status: experimental
 description: >
     Detects PowerShell creating PSScriptPolicyTest files in temp folders.
