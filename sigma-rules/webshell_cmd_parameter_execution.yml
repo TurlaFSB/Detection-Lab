@@ -1,0 +1,30 @@
+title: Possible Webshell Command Execution via HTTP GET Parameter
+id: 361dbad7-5238-4c9f-b1de-6e88355630d7
+status: experimental
+description: >
+  Detects HTTP GET requests containing common webshell command-execution
+  parameter names (cmd=, exec=, shell=), indicating likely active
+  webshell usage following a successful file upload.
+references:
+  - Validated against Metasploitable 2 Apache access log, confirming
+    GET /dav/shell.php?cmd=id and ?cmd=cat /etc/passwd successfully
+    executed commands as www-data (see attack-notes/port80-twiki-webdav.md)
+author: Pranav Verma
+date: 2026/06/20
+logsource:
+  category: webserver
+  product: apache
+detection:
+  selection:
+    url|contains:
+      - '?cmd='
+      - '?exec='
+      - '?shell='
+  condition: selection
+falsepositives:
+  - Legitimate applications occasionally use cmd= as a parameter name;
+    correlate with webdav_put_executable_upload.yml for higher confidence
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
