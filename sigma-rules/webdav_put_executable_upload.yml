@@ -1,0 +1,35 @@
+title: WebDAV PUT Request Uploading Executable File Extension
+id: a0c5fa19-a115-4f03-bdef-5d82a2bc52e7
+status: experimental
+description: >
+  Detects an HTTP PUT request via WebDAV uploading a file with an
+  executable server-side extension (.php, .asp, .aspx, .jsp, .cgi),
+  indicating likely webshell upload following WebDAV misconfiguration.
+references:
+  - Validated against Metasploitable 2 Apache access log, confirming a
+    real PUT /dav/shell.php request followed by successful command
+    execution (see attack-notes/port80-twiki-webdav.md)
+author: Pranav Verma
+date: 2026/06/20
+logsource:
+  category: webserver
+  product: apache
+detection:
+  selection:
+    method: 'PUT'
+    url|endswith:
+      - '.php'
+      - '.asp'
+      - '.aspx'
+      - '.jsp'
+      - '.cgi'
+  condition: selection
+falsepositives:
+  - Legitimate WebDAV-based deployment workflows (rare; WebDAV write
+    access to executable extensions should not be exposed in production)
+level: critical
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.t1190
+  - attack.t1505.003
