@@ -1,0 +1,35 @@
+title: Suspicious Outbound Connection from IRC Service Port
+id: b7d2e4f1-3a8c-4b5d-9e2f-1c6a8d3e7f2b
+status: experimental
+description: |
+    Detects an outbound TCP connection originating from port 6667 (IRC)
+    to a non-standard destination port. Following CVE-2010-2075 exploitation,
+    the ircd process spawns a reverse shell that initiates an outbound
+    connection back to the attacker. Legitimate IRC servers do not initiate
+    outbound connections from their service port.
+author: Pranav (TurlaFSB)
+date: 2025/06/24
+references:
+    - https://nvd.nist.gov/vuln/detail/CVE-2010-2075
+tags:
+    - attack.command_and_control
+    - attack.t1571
+    - attack.execution
+    - attack.t1059.004
+logsource:
+    category: network
+    product: suricata
+detection:
+    selection:
+        event_type: flow
+        src_port: 6667
+        proto: TCP
+    filter_legit:
+        dest_port:
+            - 6667
+            - 6668
+            - 6669
+    condition: selection and not filter_legit
+falsepositives:
+    - Unlikely — IRC servers do not initiate outbound flows from their own service port
+level: high
