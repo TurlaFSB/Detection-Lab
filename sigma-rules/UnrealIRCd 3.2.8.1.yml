@@ -1,0 +1,33 @@
+title: UnrealIRCd 3.2.8.1 Backdoor Command Execution Attempt
+id: a3f8c2d1-7e4b-4a9f-b6c3-2d1e8f5a9b4c
+status: experimental
+description: |
+    Detects CVE-2010-2075 — the UnrealIRCd 3.2.8.1 supply-chain backdoor.
+    The backdoor triggers on any TCP payload to port 6667 beginning with "AB;"
+    followed by an arbitrary shell command. Execution is blind (no output returned
+    to attacker); reverse shell callback is required to prove impact.
+    Detection requires a NIDS layer (Suricata/Snort) parsing IRC traffic and
+    writing alerts to eve.json — pure host-log monitoring has zero visibility
+    into this attack class.
+author: Pranav (TurlaFSB)
+date: 2025/06/24
+references:
+    - https://nvd.nist.gov/vuln/detail/CVE-2010-2075
+    - https://www.rapid7.com/db/modules/exploit/unix/irc/unreal_ircd_3281_backdoor/
+tags:
+    - attack.execution
+    - attack.t1059.004
+    - attack.initial_access
+    - attack.t1195
+logsource:
+    category: network
+    product: suricata
+detection:
+    selection:
+        event_type: alert
+        alert.signature|contains: 'UnrealIRCd'
+        dest_port: 6667
+    condition: selection
+falsepositives:
+    - None expected — AB; is not valid IRC syntax and has no legitimate use
+level: critical
