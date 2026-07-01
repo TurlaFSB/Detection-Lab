@@ -1,0 +1,41 @@
+title: JSP Webshell Access - Randomized Filename Pattern
+id: b2e4d1f6-3a9c-4e7b-ad56-1f8c9b234567
+status: test
+description: >
+  Detects HTTP GET requests to JSP files with randomized filenames,
+  a pattern consistent with msfvenom-generated WAR payloads and other
+  automated webshell deployment tools. msfvenom java/jsp_shell_reverse_tcp
+  generates 10+ character lowercase random JSP filenames (e.g. zzdwcyvvzt.jsp).
+  Legitimate JSP files use human-readable names. This rule targets the
+  behavioral pattern of evasion, not a specific filename — making it
+  resilient to payload regeneration.
+  
+  Log source: Suricata eve.json (event_type: http)
+  Confirmed against real attack traffic on Metasploitable 2 Tomcat 5.5.
+references:
+  - https://attack.mitre.org/techniques/T1505/003/
+  - https://attack.mitre.org/techniques/T1190/
+author: Pranav (TurlaFSB)
+date: 2026-07-01
+tags:
+  - attack.persistence
+  - attack.t1505.003
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059.007
+logsource:
+  category: webserver
+  product: suricata
+detection:
+  selection:
+    event_type: http
+    http.http_method: GET
+    http.status: 200
+  filter_legitimate:
+    http.url|re: '^\/[a-zA-Z0-9_\-]+\/[a-z]{10,}\.jsp$'
+  condition: selection and filter_legitimate
+falsepositives:
+  - Auto-generated JSP filenames from legitimate frameworks (rare)
+  - Baseline your environment's JSP naming conventions first
+level: high
