@@ -1,6 +1,4 @@
-Artifact 1 — GitHub Attack Note
-This goes in attack-notes/port-8180-tomcat.md. Format is concise technical reference, not a tutorial — the kind of thing a senior engineer reads in 2 minutes and gets full picture:
-markdown# Port 8180 — Apache Tomcat 5.5 | Manager WAR Deployment → RCE
+# Port 8180 — Apache Tomcat 5.5 | Manager WAR Deployment → RCE
 
 ## Target
 - Service: Apache Tomcat/Coyote JSP Engine 1.1
@@ -70,54 +68,7 @@ See sigma-rules/tomcat-war-deployment-rce.yml
 - Tomcat 5.5 Manager API: https://tomcat.apache.org/tomcat-5.5-doc/manager-howto.html
 - PTES Phase: Exploitation → Post-Exploitation
 
-Artifact 2 — Sigma Rule
-This is grounded in the exact syslog lines we captured. Save as sigma-rules/tomcat-war-deployment-rce.yml:
-yamltitle: Apache Tomcat Manager WAR Deployment via API
-id: a7f3c2e1-9b4d-4f8a-bc12-3e5d7a901234
-status: test
-description: >
-  Detects WAR file deployment through the Apache Tomcat Manager application,
-  as seen in syslog when Tomcat is configured with jsvc -outfile SYSLOG.
-  Legitimate CI/CD deployments should be baselined and excluded by source IP.
-  Deployments from unknown IPs, especially preceded by 401 auth failures,
-  indicate likely attacker abuse of default or stolen Manager credentials.
-references:
-  - https://attack.mitre.org/techniques/T1190/
-  - https://tomcat.apache.org/tomcat-5.5-doc/manager-howto.html
-author: Pranav (TurlaFSB)
-date: 2026-07-01
-tags:
-  - attack.initial_access
-  - attack.t1190
-  - attack.persistence
-  - attack.t1505.003
-logsource:
-  product: linux
-  service: syslog
-detection:
-  keywords:
-    - 'Manager: deploy: Deploying web application'
-    - 'Manager: Uploading WAR file to'
-    - 'HostConfig deployWAR'
-  condition: keywords
-falsepositives:
-  - Legitimate CI/CD pipelines deploying to Tomcat Manager
-  - Authorized application releases via Manager API
-  - Correlate with source IP — authorized deployments should come from known build servers only
-level: high
-Two things worth understanding about this rule's design:
-Why keywords instead of field-based matching? Because this log source is syslog via jsvc, there's no structured field parsing — it's a flat string. On a mature SIEM with a proper Tomcat log parser you'd match on cs-method: PUT and cs-uri-stem|contains: /manager/deploy, but that requires a network-layer log source. This rule targets what we actually have: syslog. Both approaches are valid; the right one depends on your log source.
-The falsepositives section is doing real work here. A blanket "WAR deployed = alert" would fire on every legitimate release in a real org. The detection value is in the context: unexpected source IP, preceded by auth failures, outside business hours, to a non-production host. Your rule fires correctly — suppression and tuning logic is the analyst's job downstream.
-
-Artifact 3 — Medium Post Outline
-Title: "How I Got a Shell Through Tomcat's Front Door: Exploiting Default Credentials and the Manager API (and How to Detect It)"
-Structure:
-Hook — "This wasn't a zero-day. I didn't write exploit code. I used the application exactly as designed — just with credentials that should never have been active."
-Section 1: The Setup — What Tomcat Manager is, why it exists, why it's dangerous on a public-facing host. Brief recon narrative: nmap banner, curl probe, the WWW-Authenticate: Basic header and what it reveals about the auth mechanism. The base64 decode moment.
-Section 2: The Attack — Default cred, WAR structure explained (web.xml + JSP payload, why the random filename matters), the Tomcat 5.5 vs 6+ API difference and why it matters operationally, the deploy → trigger → shell sequence. Screenshot of the connect to line in nc.
-Section 3: What the Logs Actually Said — The real finding here: logs weren't where the docs said. jsvc SYSLOG flag explained. The three syslog lines that told the whole story. This section is what makes your post stand out — most walkthroughs never look at logs at all.
-Section 4: Detection Engineering — The three detection layers (syslog, network PUT, filesystem). The Sigma rule with line-by-line explanation of design choices. What a defender should baseline and what should never be normal.
-Section 5: Remediation — Remove Manager from production, enforce IP allowlisting if it must exist, replace default creds, enforce TLS (Basic Auth + HTTP = cleartext creds), implement account lockout.
 
 
- "The attacker used one curl command and one WAR file. The defender needs one Sigma rule and one firewall rule. The gap between compromise and detection closes when you understand both sides."
+
+
