@@ -1,0 +1,48 @@
+title: Web Server Initiated Outbound TCP - Unknown Protocol Reverse Shell Indicator
+id: c7f2e3a1-4b8d-4c9e-ef78-3a2d1c456789
+status: test
+description: >
+  Detects outbound TCP connections initiated by a web server to a client
+  where Suricata cannot identify the application-layer protocol.
+  This is the network behavioral fingerprint of a reverse shell:
+  (1) direction reversal — server calls out to attacker machine
+  (2) no identifiable protocol — raw TCP shells produce no app-layer signature
+  
+  In this lab: Metasploitable 2 (192.168.75.130:47692) called back to
+  Kali (192.168.75.129:4444) after JSP execution. Suricata logged the
+  flow with no app_proto value, confirming the raw TCP shell signature.
+  
+  Default Suricata ruleset produced zero alerts on this traffic.
+  This rule addresses that gap with behavioral rather than signature logic.
+  
+  Log source: Suricata eve.json (event_type: flow)
+  Confirmed against real reverse shell traffic in lab.
+references:
+  - https://attack.mitre.org/techniques/T1059/007/
+  - https://attack.mitre.org/techniques/T1571/
+author: Pranav (TurlaFSB)
+date: 2026-07-01
+tags:
+  - attack.execution
+  - attack.t1059.007
+  - attack.command_and_control
+  - attack.t1571
+logsource:
+  category: network_flow
+  product: suricata
+detection:
+  selection:
+    event_type: flow
+    proto: TCP
+    flow.state: closed
+  reverse_shell_indicators:
+    src_ip|cidr: '192.168.0.0/16'   # adjust to your server subnet
+    dest_port|lt: 1024              # or known attacker ports
+  no_app_proto:
+    app_proto: null
+  condition: selection and reverse_shell_indicators and no_app_proto
+falsepositives:
+  - Legitimate server-initiated TCP connections to monitoring systems
+  - Software update agents connecting outbound on non-standard ports
+  - Tune by allowlisting known legitimate outbound server IPs and ports
+level: critical
