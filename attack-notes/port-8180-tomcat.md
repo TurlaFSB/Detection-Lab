@@ -1,6 +1,4 @@
-Artifact 1 — GitHub Attack Note
-This goes in attack-notes/port-8180-tomcat.md. Format is concise technical reference, not a tutorial — the kind of thing a senior engineer reads in 2 minutes and gets full picture:
-markdown# Port 8180 — Apache Tomcat 5.5 | Manager WAR Deployment → RCE
+# Port 8180 — Apache Tomcat 5.5 | Manager WAR Deployment → RCE
 
 ## Target
 - Service: Apache Tomcat/Coyote JSP Engine 1.1
