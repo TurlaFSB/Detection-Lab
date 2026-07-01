@@ -1,0 +1,38 @@
+title: Apache Tomcat Manager WAR File Deployment Detected
+id: f3a1c2d4-8e7b-4f9a-bc34-2d6e8a012345
+status: test
+description: >
+  Detects WAR file deployment through the Apache Tomcat Manager application
+  as recorded in syslog when Tomcat runs under jsvc with -outfile SYSLOG flag.
+  This covers both Tomcat 5.5 (jsvc.exec process) and standard installs.
+  WAR deployment via Manager is a well-known post-authentication RCE vector.
+  Legitimate deployments should be baselined by source IP and time window.
+  Deployments from unknown IPs or outside business hours are high confidence
+  indicators of attacker abuse of default or stolen Manager credentials.
+references:
+  - https://attack.mitre.org/techniques/T1190/
+  - https://attack.mitre.org/techniques/T1505/003/
+  - https://tomcat.apache.org/tomcat-5.5-doc/manager-howto.html
+author: Pranav (TurlaFSB)
+date: 2026-07-01
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.persistence
+  - attack.t1505.003
+  - attack.execution
+  - attack.t1059.007
+logsource:
+  product: linux
+  service: syslog
+detection:
+  keywords_deploy:
+    - 'Manager: deploy: Deploying web application'
+    - 'Manager: Uploading WAR file to'
+    - 'HostConfig deployWAR'
+  condition: keywords_deploy
+falsepositives:
+  - Authorized CI/CD pipelines deploying via Tomcat Manager API
+  - Scheduled application releases from known build server IPs
+  - Correlate source IP against known deployment pipeline addresses
+level: high
