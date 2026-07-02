@@ -1,0 +1,32 @@
+title: Java RMI Classloader Exploitation - Malicious JAR Fetch
+id: 8b2c4f91-3a7d-4e6c-9f1a-5d8e2b7c4a90
+status: experimental
+description: |
+    Detects the payload-delivery stage of Java RMI registry classloader
+    exploitation (CVE-generic Metasploit java_rmi_server module class).
+    A vulnerable RMI registry with no SecurityManager will fetch attacker-
+    controlled bytecode from a remote HTTP codebase URL specified by the
+    client. The target JVM's gnu-classpath/libgcj HTTP client requesting a
+    .jar file is a strong indicator of this exploitation stage, independent
+    of the specific RMI service or CVE involved.
+author: Pranav (TurlaFSB)
+date: 2026/07/02
+references:
+    - https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/multi/misc/java_rmi_server.rb
+tags:
+    - attack.execution
+    - attack.t1105
+    - attack.initial_access
+logsource:
+    category: http
+    product: suricata
+detection:
+    selection:
+        http_user_agent|contains: 'gnu-classpath'
+        url|endswith: '.jar'
+    condition: selection
+falsepositives:
+    - Legitimate Java applications using gnu-classpath/libgcj to fetch JAR
+      files over HTTP (rare in modern environments; libgcj is largely
+      deprecated)
+level: high
