@@ -1,0 +1,32 @@
+title: NFS Export Mount with no_root_squash from Untrusted Source
+id: nfs-no-root-squash-mount-001
+status: experimental
+description: Detects NFS mount attempts targeting exports with no_root_squash, allowing root privilege escalation
+references:
+  - https://attack.mitre.org/techniques/T1021/003/
+author: Pranav
+date: 2026-07-04
+logsource:
+  product: linux
+  service: nfs
+detection:
+  nfs_mount:
+    message|contains:
+      - 'mounted'
+      - 'NFS'
+      - '/mnt/nfs'
+    src_ip: '192.168.75.129'
+  no_root_squash_indicator:
+    message|contains:
+      - 'no_root_squash'
+      - 'root privileges'
+  selection:
+    nfs_mount: selection
+  condition: nfs_mount
+falsepositives:
+  - Legitimate NFS mounts from trusted infrastructure
+  - Backup and replication systems using NFS
+level: medium
+tags:
+  - attack.lateral_movement
+  - attack.resource_development
