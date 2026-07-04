@@ -1,0 +1,31 @@
+title: Unauthorized Write to SSH authorized_keys via NFS Mount
+id: nfs-authorized-keys-write-001
+status: experimental
+description: Detects writes to /root/.ssh/authorized_keys from NFS-mounted source, bypassing normal SSH trust model
+references:
+  - https://attack.mitre.org/techniques/T1098/004/
+author: Pranav
+date: 2026-07-04
+logsource:
+  product: linux
+  service: auditd
+detection:
+  authorized_keys_write:
+    type: 'FILE_MODIFICATION'
+    file: '/root/.ssh/authorized_keys'
+    uid: '0'  # root UID
+  nfs_context:
+    src_ip: '192.168.75.129'
+    operation: 'write'
+  selection:
+    authorized_keys_write: selection
+    nfs_context: nfs_context
+  condition: authorized_keys_write
+falsepositives:
+  - Legitimate SSH key provisioning by administrators
+  - Configuration management tools (Ansible, Puppet)
+level: high
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.credential_access
