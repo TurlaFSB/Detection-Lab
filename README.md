@@ -114,8 +114,7 @@ The detection layer runs concurrently — Suricata and Wazuh are live during eve
 
 ## Author
 Pranav verma 
+
 (TURLA)
-                        "The best way to learn detection is to build the attack first."
-Actively exploring Detection Engineering, Threat Intelligence, and Digital Forensics.
 
 > *"The best way to learn detection is to build the attack first."*
