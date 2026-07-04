@@ -1,0 +1,35 @@
+title: NFS no_root_squash Exploitation via SSH Key Planting
+id: nfs-ssh-keyplant-root-auth-001
+status: experimental
+description: Detects successful SSH public key authentication as root following NFS mount access, indicating potential no_root_squash exploitation
+references:
+  - https://attack.mitre.org/techniques/T1098/004/
+  - https://attack.mitre.org/techniques/T1021/004/
+author: Pranav
+date: 2026-07-04
+logsource:
+  product: linux
+  service: auth
+detection:
+  ssh_root_pubkey:
+    EventID: 4625  # Failed login attempt (for detection baseline)
+    user: 'root'
+  ssh_accepted_pubkey:
+    message|contains:
+      - 'Accepted publickey for root'
+    src_ip: '192.168.75.129'  # Kali attacker
+  selection:
+    EventType: 'Accepted'
+    user: 'root'
+    method: 'publickey'
+    src_ip: '192.168.75.129'
+  timeframe: 5m  # within 5 minutes of NFS mount
+  condition: selection
+falsepositives:
+  - Legitimate SSH key-based root logins from authorized networks
+  - Automated deployment tools using root SSH keys
+level: high
+tags:
+  - attack.lateral_movement
+  - attack.privilege_escalation
+  - attack.credential_access
