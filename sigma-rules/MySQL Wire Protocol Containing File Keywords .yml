@@ -1,0 +1,35 @@
+title: MySQL Query Containing INTO OUTFILE or LOAD_FILE Keywords Over the Wire
+id: 9b1d4f27-3e8a-4c15-a9d6-2f7b8e5c1a34
+status: experimental
+description: |
+    Detects MySQL client traffic containing INTO OUTFILE, LOAD_FILE, or INTO DUMPFILE
+    keywords in the payload, indicative of an attempt to read or write arbitrary files
+    on the database host via SQL-based file primitives. Requires FILE privilege and an
+    unrestricted secure_file_priv setting to succeed, but the attempt itself is loggable
+    regardless of success.
+references:
+    - https://dev.mysql.com/doc/refman/8.0/en/load-data.html
+    - https://attack.mitre.org/techniques/T1005/
+author: Pranav
+date: 2026-07-05
+tags:
+    - attack.collection
+    - attack.t1005
+    - attack.t1190
+logsource:
+    category: network_connection
+    product: suricata
+detection:
+    selection_port:
+        dest_port: 3306
+    selection_keywords:
+        payload_printable|contains:
+            - 'INTO OUTFILE'
+            - 'INTO DUMPFILE'
+            - 'LOAD_FILE'
+            - 'load data infile'
+    condition: selection_port and selection_keywords
+falsepositives:
+    - Legitimate DBA backup/export scripts using INTO OUTFILE for CSV exports
+    - ETL pipelines using LOAD DATA INFILE for bulk imports
+level: medium
