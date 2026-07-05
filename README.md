@@ -23,38 +23,6 @@ Every entry follows the same loop:
 
 ---
 
-## Repository Structure
-
-```
-detection-lab/
-├── attack-notes/            # Concise technical references per port/service
-│   ├── port-21-ftp.md
-│   ├── port-22-ssh.md
-│   ├── port-23-telnet.md
-│   ├── port-25-smtp.md
-│   ├── port-80-http.md
-│   ├── port-445-smb.md
-│   ├── port-1099-rmi.md
-│   ├── port-1524-ingreslock.md
-│   ├── port-2049-nfs.md
-│   ├── port-6667-irc.md
-│   └── port-8180-tomcat.md
-├── sigma-rules/              # Detection rules mapped to each attack chain
-│   ├── ftp-anonymous-login.yml
-│   ├── ssh-bruteforce.yml
-│   ├── telnet-cleartext-auth.yml
-│   ├── smtp-vrfy-enum.yml
-│   ├── smb-psexec-lateral.yml
-│   ├── rmi-exploit-detect.yml
-│   ├── ingreslock-backdoor.yml
-│   ├── nfs-no-root-squash.yml
-│   ├── irc-malicious-join.yml
-│   └── tomcat-manager-deploy.yml
-└── README.md
-```
-
----
-
 ## Coverage
 
 > Medium links will be updated as posts go live.
