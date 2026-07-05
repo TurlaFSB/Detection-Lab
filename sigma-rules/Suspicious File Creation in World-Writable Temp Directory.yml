@@ -1,0 +1,42 @@
+title: Suspicious PHP Webshell Written to World-Writable Directory via Database Process
+id: 7f3a2e91-4c6d-4b8a-9e21-8d5f6a3b9c12
+status: experimental
+description: |
+    Detects creation of executable script files (.php, .jsp, .asp) in world-writable
+    directories such as /tmp, typically indicative of a database server (MySQL/MariaDB)
+    being abused via INTO OUTFILE or LOAD_FILE to write attacker-controlled payloads
+    to disk. This technique is common when FILE privilege is granted to a low-integrity
+    or externally-reachable database account.
+references:
+    - https://portswigger.net/web-security/sql-injection/cheat-sheet
+    - https://attack.mitre.org/techniques/T1505/003/
+author: Pranav
+date: 2026-07-05
+tags:
+    - attack.persistence
+    - attack.t1505.003
+    - attack.initial_access
+    - attack.t1190
+logsource:
+    category: file_event
+    product: linux
+detection:
+    selection_path:
+        TargetFilename|contains:
+            - '/tmp/'
+            - '/var/tmp/'
+    selection_ext:
+        TargetFilename|endswith:
+            - '.php'
+            - '.jsp'
+            - '.asp'
+            - '.phtml'
+    selection_process:
+        Image|endswith:
+            - '/mysqld'
+            - '/mariadbd'
+    condition: (selection_path and selection_ext) or selection_process
+falsepositives:
+    - Legitimate application deployment scripts writing temp files
+    - Developers testing PHP scripts in /tmp during debugging
+level: high
