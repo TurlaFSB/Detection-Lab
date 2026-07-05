@@ -1,0 +1,30 @@
+title: MySQL Root Authentication with Empty Password from Remote Host
+id: 4d8e2a15-7c3f-4b9d-8e12-6a5f3b9c7d24
+status: experimental
+description: |
+    Detects successful MySQL authentication as root from a remote (non-localhost)
+    source, which should not occur in a hardened deployment. Combined with FILE
+    privilege, this represents critical exposure enabling arbitrary file read/write.
+references:
+    - https://attack.mitre.org/techniques/T1078/
+author: Pranav
+date: 2026-07-05
+tags:
+    - attack.initial_access
+    - attack.t1078
+    - attack.credential_access
+logsource:
+    category: authentication
+    product: mysql
+detection:
+    selection:
+        user: 'root'
+        source_ip|cidr: '0.0.0.0/0'
+    filter_localhost:
+        source_ip:
+            - '127.0.0.1'
+            - '::1'
+    condition: selection and not filter_localhost
+falsepositives:
+    - Legitimate remote administration if root access is intentionally exposed (rare, discouraged)
+level: critical
