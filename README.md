@@ -2,7 +2,7 @@
 
 A structured attack-and-detect research lab built on Metasploitable 2, documenting real exploitation chains alongside detection artifacts for each service.
 
-**This is not a CTF writeup repository. The goal is to build the muscle for thinking offensively and defensively at the same time****the same muscle a detection engineer, threat hunter, or red teamer needs in practice.**
+**This is not a CTF writeup repository. The goal is to build the muscle for thinking offensively and defensively at the same time the same muscle a detection engineer, threat hunter, or red teamer needs in practice.**
 
 Every entry follows the same loop:
 
