@@ -1,0 +1,36 @@
+title: PostgreSQL Malicious C Language Function Creation
+id: 8f3e2a1c-4b5d-4e6f-9a7b-1c2d3e4f5a6b
+status: experimental
+description: |
+    Detects creation of PostgreSQL functions using untrusted C language
+    shared libraries loaded from world-writable paths (/tmp, /dev/shm).
+    Following authentication with default or weak credentials, Metasploit's
+    postgres_payload module compiles a Meterpreter payload as a .so file
+    and loads it via CREATE FUNCTION ... LANGUAGE C to achieve remote code
+    execution. Legitimate DBAs do not create anonymous, randomly-named C
+    functions loading from world-writable temp directories.
+author: Pranav (TurlaFSB)
+date: 2026/07/06
+references:
+    - https://www.postgresql.org/docs/8.3/xfunc-c.html
+    - attack-notes/port-5432-postgresql.md
+tags:
+    - attack.execution
+    - attack.t1190
+    - attack.t1505.003
+logsource:
+    category: application
+    product: postgresql
+detection:
+    selection:
+        Message|contains: 'create or replace function'
+    filter_language:
+        Message|contains: 'language c'
+    filter_path:
+        Message|contains:
+            - '/tmp/'
+            - '/dev/shm/'
+    condition: selection and filter_language and filter_path
+falsepositives:
+    - Legitimate DBA installing custom C extensions from trusted, non-world-writable paths (rare in production)
+level: critical
