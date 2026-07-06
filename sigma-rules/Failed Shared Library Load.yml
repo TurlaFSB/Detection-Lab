@@ -1,0 +1,31 @@
+title: PostgreSQL Incompatible Shared Library Load Attempt
+id: 1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+status: experimental
+description: |
+    Detects failed attempts to load .so shared libraries as PostgreSQL
+    extensions, specifically missing the PG_MODULE_MAGIC macro. This is
+    a strong pre-exploitation indicator: automated tooling like Metasploit's
+    postgres_payload module frequently fails on the first 1-2 attempts
+    before compiling a compatible payload, leaving this error as a forensic
+    trail even when the final attack succeeds silently.
+author: Pranav (TurlaFSB)
+date: 2026/07/06
+references:
+    - attack-notes/port-5432-postgresql.md
+tags:
+    - attack.execution
+    - attack.t1190
+logsource:
+    category: application
+    product: postgresql
+detection:
+    selection:
+        Message|contains: 'incompatible library'
+    filter_magic:
+        Message|contains: 'missing magic block'
+    filter_ext:
+        Message|contains: '.so'
+    condition: selection and filter_magic and filter_ext
+falsepositives:
+    - Developer testing custom PostgreSQL C extensions without PG_MODULE_MAGIC macro during legitimate development
+level: high
