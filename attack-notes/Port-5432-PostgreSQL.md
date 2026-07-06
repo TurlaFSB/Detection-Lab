@@ -1,52 +1,39 @@
-# Port 5432 — PostgreSQL (Metasploitable 2)
+# Port 5432 - PostgreSQL 8.3.x Remote Code Execution
 
 ## Target
-- Host: 192.168.75.130
-- Service: PostgreSQL 8.3 (Metasploitable 2 default)
-- Attacker: 192.168.75.129 (Kali)
+- Service: PostgreSQL 8.3.0 - 8.3.7
+- Host: Metasploitable 2 (192.168.75.130)
+- OS: Ubuntu 8.04
+
+## Summary
+PostgreSQL 8.3.x on this host accepts unauthenticated-adjacent superuser access via a permissive `pg_hba.conf` (`host all all 0.0.0.0/0 md5`) combined with default `postgres/postgres` credentials. Superuser access to PostgreSQL on Linux permits arbitrary C shared library loading via `CREATE FUNCTION ... LANGUAGE C`, which Metasploit's `postgres_payload` module weaponizes into a full Meterpreter reverse shell.
 
 ## Discovery
-- `nmap -sV -sC -p 5432 -oA nmap_5432_postgres 192.168.75.130` confirmed PostgreSQL 8.3 on port 5432.
-- Manual connection via `psql -h 192.168.75.130 -U postgres` succeeded with default credentials (`postgres`/blank or trivially guessable), confirming no meaningful authentication barrier.
-- Superuser access confirmed (`usesuper = true`), opening up `pg_shadow` credential access and large-object file I/O.
+- `nmap -sV -sC -p 5432` confirmed PostgreSQL 8.3.0-8.3.7
+- `pg_hba.conf` showed `host all all 0.0.0.0/0 md5` — remote auth permitted from any source
+- Local `ident sameuser` auth blocked direct OS-user login attempts (msfadmin/postgres mismatch)
+- Manual enumeration via `sudo -u postgres psql` confirmed single superuser role (`postgres`), no additional databases or users
 
 ## Exploitation
-1. Credential harvesting via `SELECT usename, passwd FROM pg_shadow;` — dumped password hashes for all roles (superuser-only table).
-2. Arbitrary file read confirmed via `lo_import()` / `lo_export()` against `/etc/passwd`.
-3. Attempted command execution via non-existent `shell_out()` function calls — failed, confirming no such UDF pre-exists (expected; PostgreSQL 8.3 has no default RCE function).
-4. Attempted file write via `COPY (SELECT 'test') TO '/var/www/test.txt';` — blocked with `Permission denied`, confirming filesystem permissions prevented a webshell-drop route via COPY.
-5. UDF-based RCE attempted via Metasploit's `postgres_payload` module: uploaded a compiled shared object to `/tmp/*.so` and issued `CREATE OR REPLACE FUNCTION ... LANGUAGE C STRICT IMMUTABLE`.
-   - Result: **failed** — `incompatible library: missing magic block`. The uploaded `.so` did not include the required `PG_MODULE_MAGIC` macro for this exact PostgreSQL 8.3 build, so full RCE was not achieved in this session.
+- `exploit/linux/postgres/postgres_payload` (Metasploit) — authenticates with default `postgres/postgres` credentials over RHOSTS:5432
+- Module compiles a payload shared object (`.so`), attempts to load it via `CREATE FUNCTION ... LANGUAGE C` from `/tmp/`
+- Result: Meterpreter session running as `postgres` OS user
 
-## Detection — Application Log (validated)
-PostgreSQL logs on this host (`postgresql-8.3-main.log`) captured every stage of the attack in plaintext, since `log_statement` was enabled:
-- Pre-auth noise: malformed startup packets, SSL negotiation failures, repeated Ident auth failures for `postgres` and `msfadmin`.
-- RCE reconnaissance: failed `shell_out()` calls, blocked `COPY ... TO` file write.
-- RCE attempt: `CREATE OR REPLACE FUNCTION ... LANGUAGE C` referencing `/tmp/*.so`, followed by `incompatible library ... missing magic block`.
-
-Four Sigma rules were written and validated line-by-line against this captured log:
-- `postgres_udf_rce_creation.yml` — critical — the actual RCE attempt (C function creation from /tmp)
-- `postgres_incompatible_library_load.yml` — high — failed .so load, strong RCE-attempt indicator
-- `postgres_rce_probing.yml` — medium — reconnaissance for RCE primitives (shell_out probing, COPY write attempts)
-- `postgres_ident_auth_failures.yml` — low — repeated auth failures against default accounts
-
-## Detection — Network Layer (gap identified, not a rule)
-Suricata was running throughout the attack (capturing from first packet). Findings:
-- **Zero `alert` events** — the default Suricata ruleset did not recognize this traffic as malicious at any stage.
-- `flow` events only logged connection metadata (byte counts, TCP flags, timing) — **no payload capture was enabled**, so the actual query content (`CREATE FUNCTION`, `LANGUAGE C`, etc.) was never recorded at the network layer, even though PostgreSQL's wire protocol is cleartext here.
-- One connection was misclassified by Suricata's protocol-detection engine as `app_proto: smb`, meaning protocol-specific parsing never engaged for that flow.
-
-**Conclusion:** with app-level logging enabled, detection is solid. If `log_statement` were disabled (a realistic misconfiguration), this attack would have been effectively invisible — Suricata's default ruleset provides no coverage, and payload capture was not active. A follow-up session will revisit this port with `payload: yes` / `payload-printable: yes` enabled in Suricata's `eve-log` config to build a working network-layer Sigma rule as defense-in-depth.
-
-## MITRE ATT&CK Mapping
-- T1190 — Exploit Public-Facing Application
-- T1059 — Command and Scripting Interpreter
-- T1082 — System Information Discovery
-- T1110 — Brute Force / Credential Guessing
-- T1003 — Credential Access (pg_shadow)
+## Detection Gap
+- **Suricata (network layer):** Zero alerts fired. Default ruleset has no signature for PostgreSQL wire-protocol exploitation; traffic appears as a standard TCP session to 5432 with no payload-layer inspection triggered.
+- **PostgreSQL server log (application layer):** Full attack visibility. `postgresql-8.3-main.log` captured both the initial payload attempt (`incompatible library ... missing magic block`) and the successful follow-up (`create or replace function ... language c`), confirming iterative exploitation attempts before success.
+- **Conclusion:** Network-layer detection alone is insufficient for this class of attack. Application-layer logging (PostgreSQL's own log) is the only reliable detection surface — reinforcing the standing finding across this lab that Suricata's default ruleset does not cover legacy/application-specific RCE chains.
 
 ## Sigma Rules
-See `/sigma-rules/postgres_udf_rce_creation.yml`,
- `/sigma-rules/postgres_incompatible_library_load.yml`,
-  `/sigma-rules/postgres_rce_probing.yml`,
-   `/sigma-rules/postgres_ident_auth_failures.yml`
+- `sigma-rules/postgres_malicious_c_function.yml` — detects `CREATE FUNCTION ... LANGUAGE C` from world-writable paths
+- `sigma-rules/postgres_failed_so_load.yml` — detects failed `.so` load attempts missing `PG_MODULE_MAGIC` (pre-success exploitation artifact)
+
+## MITRE ATT&CK
+- T1190 — Exploit Public-Facing Application
+- T1505.003 — Server Software Component (functional equivalent: malicious C extension as persistence/execution vector)
+
+## Remediation Notes
+- Restrict `pg_hba.conf` to `md5` auth only from known internal hosts, never `0.0.0.0/0`
+- Disable default `postgres/postgres` credential pattern
+- Restrict `CREATEFUNCTION` privilege for superuser roles where untrusted language use isn't required
+- Monitor `postgresql.log` for `LANGUAGE C` function creation events — this alone would have caught the attack pre-success
