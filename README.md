@@ -2,7 +2,7 @@
 
 A structured attack-and-detect research lab built on Metasploitable 2, documenting real exploitation chains alongside detection artifacts for each service.
 
-This is not a CTF writeup repository. The goal is to build the muscle for thinking offensively and defensively at the same time — the same muscle a detection engineer, threat hunter, or red teamer needs in practice.
+**This is not a CTF writeup repository. The goal is to build the muscle for thinking offensively and defensively at the same time the same muscle a detection engineer, threat hunter, or red teamer needs in practice.**
 
 Every entry follows the same loop:
 
@@ -20,38 +20,6 @@ Every entry follows the same loop:
 | IDS        | Suricata 8.0.5 |
 | SIEM       | Wazuh 4.7.0 (Docker) |
 | Host       | AMD Ryzen 7 8845HS, 16GB DDR5, RTX 4050 |
-
----
-
-## Repository Structure
-
-```
-detection-lab/
-├── attack-notes/            # Concise technical references per port/service
-│   ├── port-21-ftp.md
-│   ├── port-22-ssh.md
-│   ├── port-23-telnet.md
-│   ├── port-25-smtp.md
-│   ├── port-80-http.md
-│   ├── port-445-smb.md
-│   ├── port-1099-rmi.md
-│   ├── port-1524-ingreslock.md
-│   ├── port-2049-nfs.md
-│   ├── port-6667-irc.md
-│   └── port-8180-tomcat.md
-├── sigma-rules/              # Detection rules mapped to each attack chain
-│   ├── ftp-anonymous-login.yml
-│   ├── ssh-bruteforce.yml
-│   ├── telnet-cleartext-auth.yml
-│   ├── smtp-vrfy-enum.yml
-│   ├── smb-psexec-lateral.yml
-│   ├── rmi-exploit-detect.yml
-│   ├── ingreslock-backdoor.yml
-│   ├── nfs-no-root-squash.yml
-│   ├── irc-malicious-join.yml
-│   └── tomcat-manager-deploy.yml
-└── README.md
-```
 
 ---
 
