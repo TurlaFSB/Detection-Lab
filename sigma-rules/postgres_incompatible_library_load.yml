@@ -1,0 +1,22 @@
+title: PostgreSQL Incompatible Shared Library Load Error
+id: 9c2d4e6f-1a3b-4c5d-8e7f-2a4b6c8d0e1f
+status: experimental
+description: Detects PostgreSQL errors indicating a shared object was loaded as an extension but missing the PG_MODULE_MAGIC block — a strong indicator of a failed or partially successful UDF-based RCE attempt
+references:
+    - https://www.postgresql.org/docs/8.3/xfunc-c.html
+author: TurlaFSB
+date: 2026-07-06
+logsource:
+    product: postgresql
+    category: application
+detection:
+    keywords:
+        - 'incompatible library'
+        - 'missing magic block'
+    condition: keywords
+falsepositives:
+    - Genuine misconfigured C extensions during legitimate development
+level: high
+tags:
+    - attack.execution
+    - attack.t1190
