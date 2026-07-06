@@ -23,10 +23,10 @@ PostgreSQL 8.3.x on this host accepts unauthenticated-adjacent superuser access 
 - **Suricata (network layer):** Zero alerts fired. Default ruleset has no signature for PostgreSQL wire-protocol exploitation; traffic appears as a standard TCP session to 5432 with no payload-layer inspection triggered.
 - **PostgreSQL server log (application layer):** Full attack visibility. `postgresql-8.3-main.log` captured both the initial payload attempt (`incompatible library ... missing magic block`) and the successful follow-up (`create or replace function ... language c`), confirming iterative exploitation attempts before success.
 - **Conclusion:** Network-layer detection alone is insufficient for this class of attack. Application-layer logging (PostgreSQL's own log) is the only reliable detection surface — reinforcing the standing finding across this lab that Suricata's default ruleset does not cover legacy/application-specific RCE chains.
-
-## Sigma Rules
-- `sigma-rules/postgres_malicious_c_function.yml` — detects `CREATE FUNCTION ... LANGUAGE C` from world-writable paths
-- `sigma-rules/postgres_failed_so_load.yml` — detects failed `.so` load attempts missing `PG_MODULE_MAGIC` (pre-success exploitation artifact)
+## Sigma Rules 
+postgres_incompatible_library_load.yml
+postgres_rce_probing.yml
+postgres_udf_rce_creation.yml
 
 ## MITRE ATT&CK
 - T1190 — Exploit Public-Facing Application
