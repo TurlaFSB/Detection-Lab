@@ -1,0 +1,39 @@
+title: Repeated Short-Lived Outbound Beaconing from Metasploitable Host to Attacker Port
+id: 9c4e1a7f-2d83-4b6e-a1f0-7c9e3d5b8a41
+status: experimental
+description: |
+    Detects a host repeatedly initiating short-lived outbound TCP connections
+    to the same non-standard destination port at a regular interval, each
+    ending in RST with minimal data transfer. Observed during post-exploitation
+    of CVE-2004-2687 (distcc) via Metasploit's exploit/unix/misc/distcc_exec
+    module using a cmd/unix payload; likely reflects repeated reverse-shell
+    callback/retry attempts. This pattern is a stronger behavioral indicator
+    of compromise than a single flow, since it reflects sustained,
+    machine-generated retry behavior rather than a one-off connection.
+references:
+    - https://nvd.nist.gov/vuln/detail/CVE-2004-2687
+    - https://github.com/TurlaFSB/detection-lab/attack-notes/port-3632-distcc.md
+author: Pranav (TurlaFSB)
+date: 2026-07-07
+logsource:
+    category: network_connection
+    product: suricata
+    service: eve
+detection:
+    selection_short_flow:
+        flow.bytes_toserver: 74
+        flow.bytes_toclient: 54
+        tcp.state: 'closed'
+        tcp.rst: true
+    timeframe: 5m
+    condition: selection_short_flow | count(dest_port) by src_ip, dest_ip, dest_port > 10
+falsepositives:
+    - Legitimate application-level keepalive/retry logic with similarly small
+      fixed-size handshake packets
+    - Load balancer or health-check probes with short timeout windows
+level: high
+tags:
+    - attack.command_and_control
+    - attack.t1071
+    - attack.t1571
+    - cve.2004.2687
