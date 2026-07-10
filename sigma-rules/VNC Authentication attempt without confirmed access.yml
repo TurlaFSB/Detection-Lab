@@ -1,0 +1,39 @@
+title: VNC Authentication Attempt With Indeterminate Result (Possible Failed Login)
+id: 9b1d4e72-8f3a-4c6e-a2d9-7e5f1b8c4a30
+status: experimental
+description: |
+    Detects RFB/VNC challenge-response authentication attempts where Suricata's
+    parser records a challenge/response exchange but does NOT populate a
+    security_result field. During validation, a confirmed failed VNC login
+    (via Metasploit vnc_login with an incorrect password) produced no
+    "fail" value in security_result — Suricata 8.0.5's RFB parser appears
+    to only populate security_result on successful auth (value "OK") for
+    this server's protocol version (RFB 3.3). This rule is therefore a
+    best-effort proxy: it flags any auth attempt lacking a result, which
+    includes failed logins but may also include benign mid-stream capture
+    artifacts. Treat as a lower-confidence signal pending further parser
+    validation (e.g. raw packet capture / RFC 6143 offset analysis).
+references:
+    - https://docs.suricata.io/en/suricata-8.0.5/rules/rfb-keywords.html
+    - https://nvd.nist.gov/vuln/detail/CVE-1999-0506
+    - https://attack.mitre.org/techniques/T1110/
+author: Pranav (TurlaFSB)
+date: 2026-07-10
+tags:
+    - attack.credential-access
+    - attack.t1110
+logsource:
+    category: network
+    product: suricata
+    service: eve
+detection:
+    selection:
+        event_type: rfb
+        rfb.authentication.security_type: 2
+    filter:
+        rfb.authentication.security_result: 'OK'
+    condition: selection and not filter
+falsepositives:
+    - Suricata mid-stream/partial captures of the server-initiated half of a successful handshake (observed pattern — cross-correlate with flow_id to the matching client-side OK event before treating as a real failure)
+    - Client disconnects before completing handshake for benign reasons (network blip, client crash)
+level: low
