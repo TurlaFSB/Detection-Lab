@@ -1,0 +1,35 @@
+title: Successful VNC Authentication Detected via RFB Protocol Analysis
+id: 7f3a2c91-4e6d-4b8a-9f1c-2d5e8a7b3c60
+status: stable
+description: |
+    Detects a successful VNC (RFB protocol) authentication handshake observed
+    at the network layer via Suricata's native RFB parser. This detection
+    exists because the target host generates zero host-based log evidence
+    for VNC authentication or session establishment (no -rfblog configured,
+    no auth.log/syslog entries produced by Xvnc/Xtightvnc), making network
+    telemetry the only available detection surface for this service.
+references:
+    - https://docs.suricata.io/en/suricata-8.0.5/rules/rfb-keywords.html
+    - https://datatracker.ietf.org/doc/html/rfc6143
+    - https://attack.mitre.org/techniques/T1021/005/
+author: Pranav (TurlaFSB)
+date: 2026-07-10
+tags:
+    - attack.lateral-movement
+    - attack.t1021.005
+    - attack.initial-access
+    - attack.t1078
+logsource:
+    category: network
+    product: suricata
+    service: eve
+detection:
+    selection:
+        event_type: rfb
+        rfb.authentication.security_type: 2
+        rfb.authentication.security_result: 'OK'
+    condition: selection
+falsepositives:
+    - Legitimate remote administration via VNC by authorized sysadmins from known jump hosts (recommended: scope with a source-IP allowlist exclusion in production)
+    - Scheduled/automated VNC-based screen-sharing or monitoring tools
+level: high
